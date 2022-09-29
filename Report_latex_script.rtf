@@ -1,0 +1,151 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2638
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\
+% University Assignment Title Page \
+% LaTeX Template\
+% Version 1.0 (27/12/12)\
+%\
+% This template has been downloaded from:\
+% http://www.LaTeXTemplates.com\
+%\
+% Original author:\
+% WikiBooks (http://en.wikibooks.org/wiki/LaTeX/Title_Creation)\
+%\
+% License:\
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)\
+% \
+% Modified for COSC343 by:\
+% Lech Szymanski (5/5/2020)\
+%\
+% Adapted for AIML402 by:\
+% Lech Szymanski (18/7/2022)\
+\
+\
+\\documentclass[12pt]\{article\}\
+\\usepackage\{cosc343style\}\
+\
+\
+% Paper code -- change it to AIML402 if you're enrolled in AIML402\
+\\papercode\{COSC343\}\
+\
+% Your project title (change appropriately for the assignment)\
+\\title\{Assignment 1 report\}\
+\
+% Your name\
+\\author\{Callum \\textsc\{Hancock\}\}\
+\\studentid\{4241792\}\
+\
+\
+% Date, change the \\today to a set date if you want to be precise\
+\\reportdate\{\\today\}\
+\
+\\begin\{document\}\
+\
+\
+\\maketitle\
+\
+\
+\\section\{Introduction\}\
+\
+The purpose of this assignment was to create a Python agent that could solve the Wordle puzzle on an already existing interface. Therefore, the programme was exclusively concerned with providing a strong next guess for the game which, ultimately, would solve the puzzle (find the mystery word) in as few moves as possible. No handling of gameplay was required and, as long as no magic numbers were used, it would work on various languages and word lengths.\
+\
+This report will detail the approach I took to build my agent alongside an analysis of its performance.\
+\
+\\section\{Wordle Agent\}\
+\
+\\subsection\{Initial Ideas\}\
+\
+My first attempt at writing an effective agent was to create a comprehensive function for minimising the remaining possible solutions based on previous clues. I also tried to write a heuristic for full words, attempting to formulate an equation that could score individual words effectively.\
+\
+However, quickly it became clear that both approaches were not ideal for this assignment. Regarding guess reduction, ensuring accurate removal using as much of the information from previous guesses as possible proved unnecessarily difficult. In the case of the heuristic, it became clear that calculating scores based on full words was likely to be a slap-dash and clunky approach.\
+\
+\\subsection\{Final Code\}\
+\
+The agent is split into two key parts of equal importance. On one side there is the ability to give scores to each word within the dictionary and on the other, there is the ability to narrow down the dictionary.\
+\
+First, my agent attempts to find the best starting word. This takes up the bulk of the programme's run time and only occurs once - even for multiple rounds of the game \\cite\{runonce\}. It does this by using a basic approach to entropy \\cite\{entropy\}. Specifically, the entropy of each letter in each position. Words containing letters with high entropy will score highly and words with double letters are penalised. Subsequently, words with unique letters that provide the most information based on entropy gathered through letter frequency score highly; in standard settings it selects ``CARES''.\
+\
+Once it has decided on the best first guess it will return it. When called again, the agent now takes advantage of the information it has about the final answer to reduce the dictionary to only possible solutions. This algorithm prioritises simplicity over absolute effectiveness, meaning that some words which technically cannot be the solution fall through the cracks. However, the information it uses - while not complete - still reduces the potential dictionary significantly.\
+\
+After pruning again, the new dictionary is scored using the entropy, probability, and frequency functions. Like at the start, the highest scoring word is selected, with alphabetical order prioritised in cases of a tie.\
+\
+This approach worked well and scored between 4.8-5.5 on average. However, I realised that it was only playing the game in hard mode and did not take advantage of the capabilities allowed for by easy mode. \
+\
+\\subsection\{Utilising Easy Mode\}\
+\
+To take advantage of easy mode without completely redesigning my algorithm, I tried to think about where it could be the most useful and, conversely, where hard mode was the most limiting. With this in mind, I realised that my agent would often run into trouble when it had four green letters but many possible solutions in the remaining dictionary. In this scenario, I was relying on the solution being closer to the front of the alphabet. Clearly, a more insightful process could be used in easy mode.\
+\
+As a result, I created a function where my algorithm checks if it has four greens (n-1 where n is the length of the word) and then proceeds to find the next guess that will - hopefully - be a word that contains letters from options for the remaining blank. This is best illustrated by example: on seed 0, round 56, guess 4 my agent returns ``BUNKS'', with ``UNKS'' as green. The dictionary contains more than 2 (the remaining number of guesses) words and so risks not guessing it in time. Subsequently, the agent suggests ``APHID'' as it scores highly in the algorithm that prioritises grey letters in the remaining dictionary (in this case [D, F, G, H, J, P]). Now, ``PUNKS'', ``HUNKS'', and ``DUNKS'' can be eliminated which cuts the remaining dictionary in half. Subsequently, we have a much better chance of getting it correct within the remaining guesses. In this case, a bit of luck was required as three options remained and ``FUNKS'' happened to be the highest in the alphabet. However, this will improve the algorithm's performance over time.\
+\
+Naturally, if the mode is not easy, there are only two words in the remaining dictionary, or we are about to take our last guess, the function does not run as it is either not allowed to or has a better chance of guessing and hoping for a lucky outcome.\
+\
+\\section\{Agent Performance Analysis\}\
+\
+To begin my analysis of the agent, I ran 10 simulations in both easy and hard mode (using different seed numbers each time) to track the average performance over 1000 cumulative games. Figure~\\ref\{fig:graph\} summarises these results below.\
+\
+\\begin\{figure\}\
+    \\centering\
+    \\includegraphics[width=0.8\\textwidth]\{cosc343report/figures/graph.png\}\
+    \\caption\{\\label\{fig:graph\}Tracking agent performance across different modes and seeds.\}\
+\\end\{figure\}\
+\
+The first thing to note is that my hypothesis was right: my relatively band-aid-like answer to increasing the agent's performance in easy mode resulted in a 5\\% increase in performance (4.94 vs 5.18 average).\
+\
+A more subtle observation is that easy mode also smooths out some of the sharp increases/decreases in performance that we see in hard mode (e.g. between seeds five and six on the chart). I imagine that the reason for this is twofold: firstly the agent experiences varied performances over different word subsets due to luck playing a significant role in the agent's ability to deduce the answer in six or fewer steps. Secondly, not solving the puzzle results in twice the penalty (a score of 12). I assume that in hard mode the agent had more scores of 12 - which does not reflect that it may have been close to the answer, whereas the modified capability in easy mode likely led to a score of six or less more frequently - particularly in close situations. This explains the differing gradients between seeds.\
+\
+Another insight is that, while the average and worst-case scores are better in easy mode, the best case is not (both = 4.79). The reason for this is likely the fact that 100 rounds is not a significant sample size, meaning the hard mode agent may have gotten lucky with relatively few situations where four greens led to a blowout. I tested this hypothesis by running an experiment, the results of which can be seen in Table~\\ref\{tab:experiment\} and show that, given enough rounds, the agent in easy mode will outperform the agent in hard mode.\
+\
+\\begin\{table\}\
+\\centering\
+\\begin\{tabular\}\{l|l|l|l\}\
+Mode & Seed & Rounds & Average Score  \\\\\\hline\
+Easy & 0 & 100 & 4.79 \\\\\
+Hard & 0 & 100 & 4.79 \\\\\
+Easy & 0 & 1000 & 5.02 \\\\\
+Hard & 0 & 1000 & 5.18\
+\\end\{tabular\}\
+\\caption\{\\label\{tab:experiment\}Effect of the number of rounds on average score\}\
+\\end\{table\}\
+\
+In terms of run-time, the agent completes the standard trial (100 rounds, five letters, six guesses, English, easy) in just over a minute; 55 seconds are spent finding its first guess and 10 seconds are used to carry out the subsequent guesses and games. This is well below the maximum set out by Lech (10 minutes). The key reason for this is that it only selects its first word once and, because it is a word with high entropy, this always reduces the dictionary significantly - even in the worst case of all grey letters it cuts $>93\\%$ of words out (this also quantifies the effectiveness of the simple algorithm to reduce the dictionary). This is supported by the time-complexity of the programme, which is $\\mathcal\{O\}(n^2)$. Therefore, working through the full dictionary of 11423 words takes 220.6 times longer than when the dictionary contains 769 words (worst case after the first guess). \
+\
+These insights - while showing that the agent is relatively effective - certainly give rise to some potential areas for improvement. The relatively good time-performance means that there would be opportunity to add complexity to the algorithm while keeping its run-time sensible.\
+\
+\\section\{Reflection\}\
+\
+\\subsection\{Next Steps\}\
+\
+Clearly, the agent - both in hard and easy mode - is luck dependent. The obvious place to begin with improvement would be to attempt to reduce this. Immediately, if I did this again or had more time, I would want to better streamline my two-pronged approach (guess reduction and guess selection). This might involve reordering words in the dictionary in order of priority and then simply selecting the one at the top, rather than removing words from the list entirely. \
+\
+This would also assist with taking better advantage of easy mode. My current solution - checking to see if we have n-1 green letters where n is the length of the word - is limited and, as mentioned above, band-aid-like. The code often runs into similar trouble when it has n-2 green letters. My idea for improving this would be to - instead of using letter frequency in a given position to determine probability and entropy - use entropy through the potential of a word to reduce the list \\cite\{3blue1brown\}. This means that the code would, for each word in the dictionary, x, simulate that word as the possible solution. Then, for each word in the dictionary again, y, it would see how much information would be gathered if we guessed y and x was the solution. Using this idea to score each guess would allow for a natural introduction to guessing words that certainly will not be the solution, but will reduce the number of potential solutions more frequently; ultimately further streamlining the programme by offering high scores to not just likely solutions, but guesses that might lead us to the solution quicker. \
+\
+\\subsection\{Conclusion\}\
+\
+My agent performs better than I expected. Averaging under five across different seeds is satisfying as it is below the target set by Lech. However, as outlined, my approach has plenty of room for improvement. Central to this is to better integrate the various aspects of my programme. \
+\
+%The environment \\thebibliography produces a list of references; such list will be titled "References". A parameter inside braces, 3 in the example, indicates the number of entries to be added; this parameter can not be greater than 99.\
+\
+%To create a bibliography entry the command \\bibitem is used. A parameter inside braces is set to label this entry and can later be used as identifier for this reference. After the closing brace the text with the name of the author, the book title, publisher and so on is entered. \
+\
+%Any choice of citation style is acceptable as long as you are consistent.\
+\
+\\begin\{thebibliography\}\{3\}\
+\
+\\bibitem\{runonce\}\
+\\href\{https://stackoverflow.com/questions/4103773/efficient-way-of-having-a-function-only-execute-once-in-a-loop\}\{Aaron Asterling, StackOverflow, 2010\}\
+\
+\\bibitem\{entropy\}\
+\\href\{https://dev.to/vnjogani/the-optimal-strategy-for-solving-a-wordle-5fd7\}\{Vinit Jogani, Dev.to, 2022\}\
+\
+\\bibitem\{3blue1brown\}\
+\\href\{https://www.3blue1brown.com/lessons/wordle\}\{Grant Sanderson, 3Blue1Brown, 2022\}\
+\
+\
+\\end\{thebibliography\}\
+  \
+\\end\{document\}}
